@@ -4,14 +4,14 @@ import (
 	"container/heap"
 	"fmt"
 	"io/ioutil"
-    "unicode"
+	"unicode"
 )
 
 type Node struct {
 	left     *Node
 	right    *Node
 	isTerm   bool
-	value    uint 
+	value    uint
 	priority int
 }
 
@@ -56,7 +56,6 @@ func main() {
 		}
 	}
 
-
 	pq := PriorityQueue{}
 
 	for ch, count := range freq_histo {
@@ -64,12 +63,10 @@ func main() {
 		pq = append(pq, &Node{isTerm: true, value: uint(ch), priority: count})
 
 	}
-    
-    var eof uint = 256
- 
-    pq = append(pq, &Node{isTerm: true, value: eof , priority: 1})
 
-   
+	var eof uint = 256
+
+	pq = append(pq, &Node{isTerm: true, value: eof, priority: 1})
 
 	heap.Init(&pq)
 
@@ -84,50 +81,77 @@ func main() {
 
 	root := heap.Pop(&pq).(*Node)
 
-    encode_map := make(map[uint]string)
+	encode_map := make(map[uint]string)
 
-    walk_tree(root, encode_map, "")
-    
+	walk_tree(root, encode_map, "")
+
+	for key, value := range encode_map {
+		if unicode.IsSpace(rune(key)) {
+			switch key {
+			case ' ':
+				fmt.Printf("%s:%s\n", "<space>", value)
+			case '\n':
+				fmt.Printf("%s:%s\n", "<newline>", value)
+
+			}
+		} else {
+			fmt.Printf("%c:%s\n", key, value)
+		}
+	}
+
+	encoded_data := ""
+
+	for _, data := range input_data {
+		encoded := encode_map[uint(data)]
+		encoded_data += encoded
+	}
+	encoded_data += encode_map[eof]
+
+	fmt.Printf("%s\n", encoded_data)
 
 
-
-    for key, value := range encode_map {
-        if unicode.IsSpace(rune(key)) {
-            switch key {
-                case ' ':
-                    fmt.Printf("%s:%s\n", "<space>", value)
-                case '\n':
-                    fmt.Printf("%s:%s\n", "<newline>", value)
-
-            }
-        } else {
-        fmt.Printf("%c:%s\n", key, value)
-        }
+    var decoded uint
+    for len(encoded_data) > 0 {
+         encoded_data, decoded =  decode(encoded_data, root)
+            
+         if decoded == eof {
+            break
+         }
+         fmt.Printf("%c", decoded)
     }
-
-    encoded_data := ""
-
-    for _, data := range input_data  {
-        encoded := encode_map[uint(data)]
-        encoded_data += encoded
-    }    
-    encoded_data += encode_map[eof] 
-
-    fmt.Printf("%s", encoded_data)
 }
 
-func walk_tree(node *Node, encode_map  map[uint]string, prefix string ){
+func decode(encoded_data string, node *Node) (string, uint) {
+	if node.isTerm {
+		return encoded_data, node.value
+	} else {
+
+		bit := encoded_data[0]
+
+		if bit == '1' {
+			return decode(encoded_data[1:], node.left)
+		}
+
+		if bit == '0' {
+			return decode(encoded_data[1:], node.right)
+		}
+	}
+
+    return "", 0 
+}
+
+func walk_tree(node *Node, encode_map map[uint]string, prefix string) {
 
 	if node.left != nil {
-		walk_tree(node.left, encode_map, prefix + "1" )
+		walk_tree(node.left, encode_map, prefix+"1")
 	}
 	if node.right != nil {
-		walk_tree(node.right, encode_map, prefix + "0")
+		walk_tree(node.right, encode_map, prefix+"0")
 	}
 
-    if node.isTerm {
-        encode_map[uint(node.value)] = prefix
-    }
+	if node.isTerm {
+		encode_map[uint(node.value)] = prefix
+	}
 
 }
 
