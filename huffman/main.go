@@ -4,13 +4,14 @@ import (
 	"container/heap"
 	"fmt"
 	"io/ioutil"
+    "unicode"
 )
 
 type Node struct {
 	left     *Node
 	right    *Node
 	isTerm   bool
-	value    byte
+	value    uint 
 	priority int
 }
 
@@ -55,13 +56,20 @@ func main() {
 		}
 	}
 
+
 	pq := PriorityQueue{}
 
 	for ch, count := range freq_histo {
 
-		pq = append(pq, &Node{isTerm: true, value: byte(ch), priority: count})
+		pq = append(pq, &Node{isTerm: true, value: uint(ch), priority: count})
 
 	}
+    
+    var eof uint = 256
+ 
+    pq = append(pq, &Node{isTerm: true, value: eof , priority: 1})
+
+   
 
 	heap.Init(&pq)
 
@@ -76,8 +84,50 @@ func main() {
 
 	root := heap.Pop(&pq).(*Node)
 
+    encode_map := make(map[uint]string)
 
-    printTree(root)
+    walk_tree(root, encode_map, "")
+    
+
+
+
+    for key, value := range encode_map {
+        if unicode.IsSpace(rune(key)) {
+            switch key {
+                case ' ':
+                    fmt.Printf("%s:%s\n", "<space>", value)
+                case '\n':
+                    fmt.Printf("%s:%s\n", "<newline>", value)
+
+            }
+        } else {
+        fmt.Printf("%c:%s\n", key, value)
+        }
+    }
+
+    encoded_data := ""
+
+    for _, data := range input_data  {
+        encoded := encode_map[uint(data)]
+        encoded_data += encoded
+    }    
+    encoded_data += encode_map[eof] 
+
+    fmt.Printf("%s", encoded_data)
+}
+
+func walk_tree(node *Node, encode_map  map[uint]string, prefix string ){
+
+	if node.left != nil {
+		walk_tree(node.left, encode_map, prefix + "1" )
+	}
+	if node.right != nil {
+		walk_tree(node.right, encode_map, prefix + "0")
+	}
+
+    if node.isTerm {
+        encode_map[uint(node.value)] = prefix
+    }
 
 }
 
